@@ -7,8 +7,21 @@
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
-    "plugins": ["expo-router"],
-    "ios": { "supportsTablet": true },
+    "plugins": [
+      "expo-router",
+      "expo-audio",
+      "expo-secure-store",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Kibitzer uses the camera to scan the pairing QR code.",
+          "barcodeScannerEnabled": true
+        }
+      ]
+    ],
+    "ios": {
+      "supportsTablet": true
+    },
     "android": {}
   }
 }

@@ -15,5 +15,6 @@
       "@kibitzer/shared": ["../../packages/shared/src/index.ts"]
     }
   },
-  "include": ["app", "src"]
+  "include": ["app", "src"],
+  "exclude": ["**/*.test.ts"]
 }

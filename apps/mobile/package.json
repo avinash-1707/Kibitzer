@@ -8,9 +8,20 @@
     "ios": "expo run:ios",
     "android": "expo run:android"
   },
-  "//": "Unit 0 skeleton. Units F/G/H add real deps via `npx expo install` (expo, expo-router, react-native, react-native-sse, expo-audio, expo-camera, expo-secure-store) and fill the screens.",
+  "//": "Unit F installed the app deps (Expo SDK 57: router, audio, camera, secure-store, react-native-sse, zustand). Units G/H fill their own screens against these.",
   "dependencies": {
-    "@kibitzer/shared": "workspace:*"
+    "@kibitzer/shared": "workspace:*",
+    "expo": "^57.0.18",
+    "expo-audio": "~57.0.4",
+    "expo-camera": "~57.0.4",
+    "expo-router": "^57.0.17",
+    "expo-secure-store": "~57.0.2",
+    "react": "^19.2.8",
+    "react-native": "^0.87.1",
+    "react-native-sse": "^1.2.1",
+    "zustand": "^5.0.15"
   },
-  "devDependencies": {}
+  "devDependencies": {
+    "@types/react": "^19.2.18"
+  }
 }
