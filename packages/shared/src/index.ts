@@ -19,3 +19,11 @@ export { eventSchema, eventDetailSchema, parseEvent } from "./event.ts";
 export { isDestructive } from "./classify.ts";
 export { dramaScore, shouldNarrate } from "./drama.ts";
 export { describeEvent, templatedFallback } from "./describe.ts";
+export {
+  turnShape,
+  lengthFor,
+  summarizeTurn,
+  type TurnShape,
+  type NarrationLength,
+  type LengthSpec,
+} from "./turn.ts";

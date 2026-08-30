@@ -3,7 +3,10 @@
 import {
   dramaScore,
   isDestructive,
-  shouldNarrate,
+  lengthFor,
+  summarizeTurn,
+  templatedFallback,
+  turnShape,
   type FeedItem,
   type KibitzerEvent,
 } from "@kibitzer/shared";
@@ -16,12 +19,14 @@ import {
   updateEvent,
 } from "./store.ts";
 import { synthesize } from "./tts.ts";
+import { feed, type FlushResult } from "./turnBuffer.ts";
 import { log } from "./log.ts";
 
 /**
- * Process one event: classify → score → debounce → narrate → tts,
- * broadcasting `score` → `narration` → `audio` frames as each stage resolves so
- * the feed never waits on the slowest stage. See architecture.md §4.
+ * Process one event: classify → score → broadcast the `score` frame, then hand it to the
+ * turn buffer. Narration is NOT per command — it fires once per turn (one user prompt's
+ * worth of work) when the buffer flushes, and its length scales with how much the agent did.
+ * See architecture.md §4.
  */
 export async function runPipeline(event: KibitzerEvent): Promise<void> {
   // 0. Classify — the server is the sole source of truth for isDestructive.
@@ -44,29 +49,75 @@ export async function runPipeline(event: KibitzerEvent): Promise<void> {
   updateEvent(event.id, { dramaScore: score, detail: event.detail });
   broadcast("score", { eventId: event.id, dramaScore: score });
 
-  // 2. Debounce/filter — drop Read spam and duplicate bursts (stored + scored only).
-  if (!shouldNarrate(event, recent)) return;
+  // 2. Buffer into the current turn. A flush means the turn is ready to narrate; otherwise
+  //    the event is stored + scored only, and we stay silent until the turn closes.
+  const flush = feed(event, score, (result) =>
+    enqueueTurn(result.events[0]!.sessionId, result),
+  );
+  if (flush) await enqueueTurn(event.sessionId, flush);
+}
+
+// Serialize narration per session so back-to-back flushes (a size-flush then a turn_complete,
+// or an idle-flush racing a boundary) never overlap: turn N's narration must land before turn
+// N+1 reads recentBefore() for its anti-repetition context, and its audio must not interleave.
+const chain = new Map<string, Promise<unknown>>();
+
+function enqueueTurn(sessionId: string, turn: FlushResult): Promise<unknown> {
+  const run = () => narrateTurn(turn);
+  const next = (chain.get(sessionId) ?? Promise.resolve())
+    .then(run, run) // run regardless of whether the prior turn resolved or rejected
+    .catch((err) => log.warn(`pipeline: narrateTurn failed:`, err));
+  chain.set(sessionId, next);
+  void next.finally(() => {
+    if (chain.get(sessionId) === next) chain.delete(sessionId);
+  });
+  return next;
+}
+
+/**
+ * Narrate one whole turn: pick a length from the turn's action size, summarize what the
+ * agent did, run one LLM call, then eager-generate the audio. Narration + audio attach to
+ * the turn's anchor (its last event), whose FeedItem is already in the ring.
+ */
+async function narrateTurn(turn: FlushResult): Promise<void> {
+  const shape = turnShape(turn.events, turn.scores);
+  const spec = lengthFor(shape);
+  const summary = summarizeTurn(turn.events);
+
+  const anchor = turn.events[turn.events.length - 1]!;
+  const fallback = templatedFallback(anchor);
 
   // 3. Narration — one LLM call; falls back internally, so this never throws.
-  const recentLines = prior
+  const recentLines = recentBefore(turn.anchorId)
     .map((f) => f.narration)
     .filter((n): n is string => n !== null)
     .slice(-3);
-  const narration = await narrate(event, recentLines, getPersona());
-  item.narration = narration;
-  updateEvent(event.id, { narration });
-  // Snapshot: the frame carries audioUrl:null now; step 4 mutates `item` afterward.
-  broadcast("narration", { ...item });
+  const narration = await narrate(
+    summary,
+    recentLines,
+    getPersona(),
+    spec,
+    fallback,
+  );
+  updateEvent(turn.anchorId, { narration });
 
-  // 4. TTS — eager pre-generate. On failure log and skip: audio is additive, the
-  //    narration text already landed, so the feed is never blocked or broken.
+  // Snapshot for the frame; step 4 mutates the stored item afterward. Use the turn's drama
+  // PEAK, not the anchor's score — the anchor is usually turn_complete, which scores ~0.
+  broadcast("narration", {
+    event: anchor,
+    dramaScore: shape.dramaPeak,
+    narration,
+    audioUrl: null,
+  });
+
+  // 4. TTS — eager pre-generate. On failure log and skip: audio is additive, the narration
+  //    text already landed, so the feed is never blocked or broken.
   try {
-    await synthesize(event.id, narration);
-    const audioUrl = `/api/tts?eventId=${event.id}`;
-    item.audioUrl = audioUrl;
-    updateEvent(event.id, { audioUrl });
-    broadcast("audio", { eventId: event.id, audioUrl });
+    await synthesize(turn.anchorId, narration);
+    const audioUrl = `/api/tts?eventId=${turn.anchorId}`;
+    updateEvent(turn.anchorId, { audioUrl });
+    broadcast("audio", { eventId: turn.anchorId, audioUrl });
   } catch (err) {
-    log.warn(`pipeline: tts failed for ${event.id}:`, err);
+    log.warn(`pipeline: tts failed for ${turn.anchorId}:`, err);
   }
 }
