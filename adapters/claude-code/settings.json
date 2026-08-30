@@ -1,0 +1,52 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "",
+        "hooks": [
+          { "type": "http", "url": "http://localhost:8787/ingest/claude-code", "timeout": 5 }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Bash|Edit|Write|Read",
+        "hooks": [
+          { "type": "http", "url": "http://localhost:8787/ingest/claude-code", "timeout": 5, "async": true }
+        ]
+      }
+    ],
+    "PostToolUseFailure": [
+      {
+        "matcher": "Bash|Edit|Write",
+        "hooks": [
+          { "type": "http", "url": "http://localhost:8787/ingest/claude-code", "timeout": 5, "async": true }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "matcher": "",
+        "hooks": [
+          { "type": "http", "url": "http://localhost:8787/ingest/claude-code", "timeout": 5 }
+        ]
+      }
+    ],
+    "StopFailure": [
+      {
+        "matcher": "",
+        "hooks": [
+          { "type": "http", "url": "http://localhost:8787/ingest/claude-code", "timeout": 5 }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "matcher": "",
+        "hooks": [
+          { "type": "http", "url": "http://localhost:8787/ingest/claude-code", "timeout": 5 }
+        ]
+      }
+    ]
+  }
+}
