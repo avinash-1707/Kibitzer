@@ -2,16 +2,10 @@
 // newest-first card list; `audio` frames auto-enqueue on-device (queued, non-overlapping).
 // Codes against Unit F's frozen interfaces only (useEventStream, audioQueue, store, api).
 import { useEffect, useMemo, useState } from "react";
-import {
-  ActivityIndicator,
-  FlatList,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 import { router } from "expo-router";
 import type { FeedItem } from "@kibitzer/shared";
+import Animated from "react-native-reanimated";
 import { getBase } from "../src/base";
 import { useEventStream } from "../src/useEventStream";
 import { audioQueue } from "../src/audioQueue";
@@ -26,6 +20,9 @@ import {
 import { DramaMeter } from "../src/components/feed/DramaMeter";
 import { PersonaSwitcher } from "../src/components/feed/PersonaSwitcher";
 import { FeedCard } from "../src/components/feed/FeedCard";
+import { ScalePressable } from "../src/components/ScalePressable";
+import { StandbyDot } from "../src/components/StandbyDot";
+import { colors, fonts, radius, spacing } from "../src/theme";
 
 export default function FeedScreen() {
   const [base, setBaseState] = useState<string | null>(null);
@@ -41,7 +38,7 @@ export default function FeedScreen() {
   if (!base) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator />
+        <ActivityIndicator color={colors.accent} />
       </View>
     );
   }
@@ -98,27 +95,34 @@ function FeedConnected({ base }: { base: string }) {
 
       <View style={styles.controls}>
         <PersonaSwitcher base={base} active={persona} />
-        <TouchableOpacity
+        <ScalePressable
           style={[styles.wrapBtn, !sessionId && styles.wrapBtnDisabled]}
           onPress={wrapUp}
           disabled={!sessionId}
+          accessibilityRole="button"
         >
           <Text style={styles.wrapText}>Wrap up</Text>
-        </TouchableOpacity>
+        </ScalePressable>
       </View>
 
-      <FlatList
+      <Animated.FlatList<FeedItem>
         data={feed}
         keyExtractor={(it) => it.event.id}
         renderItem={({ item }) => <FeedCard base={base} item={item} />}
         contentContainerStyle={styles.list}
         ItemSeparatorComponent={() => <View style={styles.sep} />}
         ListEmptyComponent={
-          <Text style={styles.empty}>
-            {status === "error"
-              ? "Disconnected — retrying…"
-              : "Waiting for the agent… narrated lines appear here as it works."}
-          </Text>
+          <View style={styles.empty}>
+            <StandbyDot />
+            <Text style={styles.emptyTitle}>
+              {status === "error" ? "Disconnected — retrying…" : "Waiting for the agent…"}
+            </Text>
+            {status !== "error" ? (
+              <Text style={styles.emptySub}>
+                Narrated lines appear here the moment it starts working.
+              </Text>
+            ) : null}
+          </View>
         }
       />
     </View>
@@ -126,34 +130,45 @@ function FeedConnected({ base }: { base: string }) {
 }
 
 const styles = StyleSheet.create({
-  flex: { flex: 1, backgroundColor: "#f4f4f5" },
-  center: { flex: 1, alignItems: "center", justifyContent: "center" },
+  flex: { flex: 1, backgroundColor: colors.bg },
+  center: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.bg },
   controls: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    backgroundColor: "#fff",
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm + 2,
+    backgroundColor: colors.panel,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: "#e2e2e2",
+    borderBottomColor: colors.border,
   },
   wrapBtn: {
-    backgroundColor: "#c0392b",
-    paddingHorizontal: 14,
-    paddingVertical: 7,
-    borderRadius: 8,
+    backgroundColor: colors.accent,
+    paddingHorizontal: spacing.md + 2,
+    paddingVertical: spacing.xs + 3,
+    borderRadius: radius.sm,
   },
-  wrapBtnDisabled: { backgroundColor: "#ccc" },
-  wrapText: { color: "#fff", fontSize: 13, fontWeight: "700" },
-  list: { padding: 16, gap: 0, flexGrow: 1 },
-  sep: { height: 12 },
+  wrapBtnDisabled: { backgroundColor: colors.panel2, opacity: 0.6 },
+  wrapText: { color: colors.onAccent, fontSize: 13, fontWeight: "800" },
+  list: { padding: spacing.lg, gap: 0, flexGrow: 1 },
+  sep: { height: spacing.md },
   empty: {
+    alignItems: "center",
+    marginTop: 56,
+    paddingHorizontal: spacing.xxl,
+    gap: spacing.sm,
+  },
+  emptyTitle: {
+    color: colors.textDim,
+    fontFamily: fonts.displaySemibold,
+    fontSize: 14,
     textAlign: "center",
-    color: "#888",
-    fontSize: 15,
-    marginTop: 48,
-    paddingHorizontal: 24,
-    lineHeight: 22,
+  },
+  emptySub: {
+    color: colors.muted,
+    fontSize: 13,
+    textAlign: "center",
+    lineHeight: 19,
+    maxWidth: 280,
   },
 });

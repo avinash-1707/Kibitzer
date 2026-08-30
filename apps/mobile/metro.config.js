@@ -19,11 +19,21 @@ config.resolver.nodeModulesPaths = [
 // Pin core packages to the app's single copy. Under Bun's .bun store, @expo/cli's
 // serializer otherwise resolves react-native from its own nested copy (which lacks
 // the ./rn-get-polyfills export), breaking web bundling. Force one canonical copy.
+// Reanimated 4 + its worklets runtime are native modules that MUST also resolve to a
+// single copy — two copies would load two worklets runtimes and crash on first render.
 const rn = path.resolve(projectRoot, "node_modules/react-native");
 config.resolver.extraNodeModules = {
   ...config.resolver.extraNodeModules,
   "react-native": rn,
   react: path.resolve(projectRoot, "node_modules/react"),
+  "react-native-reanimated": path.resolve(
+    projectRoot,
+    "node_modules/react-native-reanimated",
+  ),
+  "react-native-worklets": path.resolve(
+    projectRoot,
+    "node_modules/react-native-worklets",
+  ),
 };
 
 module.exports = config;

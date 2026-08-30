@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { motion } from "motion/react";
 import type { Analytics } from "@kibitzer/shared";
 import { fetchAnalytics } from "./api.ts";
 import { dramaColor } from "./drama.ts";
@@ -32,10 +33,23 @@ export function AnalyticsTab({ sessionId }: { sessionId: string | null }) {
   }, [sessionId]);
 
   if (!sessionId)
-    return <p className="empty">No active session yet.</p>;
+    return (
+      <div className="empty-state">
+        <span className="standby-ring" aria-hidden="true">
+          <span className="standby-dot" />
+        </span>
+        <p className="empty-title">No active session yet.</p>
+        <p className="empty-sub">Analytics populate once an agent connects.</p>
+      </div>
+    );
   if (error && !data)
-    return <p className="empty">Analytics unavailable: {error}</p>;
-  if (!data) return <p className="empty">Loading analytics…</p>;
+    return (
+      <div className="empty-state">
+        <p className="empty-title">Analytics unavailable</p>
+        <p className="empty-sub">{error}</p>
+      </div>
+    );
+  if (!data) return <AnalyticsSkeleton />;
 
   const totalCalls = Object.values(data.toolCallsByType).reduce(
     (a, b) => a + b,
@@ -129,19 +143,71 @@ function ToolBreakdown({
   if (rows.length === 0) return <p className="empty small">No tool calls yet.</p>;
   return (
     <ul className="bars">
-      {rows.map(([tool, count]) => (
-        <li key={tool} className="bar-row">
-          <span className="bar-label">{tool}</span>
-          <span className="bar-track">
-            <span
-              className="bar-fill"
-              style={{ width: total ? `${(count / total) * 100}%` : "0%" }}
-            />
-          </span>
-          <span className="bar-count">{count}</span>
-        </li>
-      ))}
+      {rows.map(([tool, count]) => {
+        const pct = total ? (count / total) * 100 : 0;
+        return (
+          <li key={tool} className="bar-row">
+            <span className="bar-label">{tool}</span>
+            <span className="bar-track">
+              <motion.span
+                className="bar-fill"
+                style={{ transformOrigin: "left" }}
+                initial={{ scaleX: 0 }}
+                animate={{ scaleX: pct / 100 }}
+                transition={{ type: "spring", duration: 0.5, bounce: 0 }}
+              />
+            </span>
+            <span className="bar-count">{count}</span>
+          </li>
+        );
+      })}
     </ul>
+  );
+}
+
+/** Shimmer placeholders shaped like the real layout, shown while `data` is null. */
+function AnalyticsSkeleton() {
+  return (
+    <div className="analytics" aria-busy="true" aria-label="Loading analytics">
+      <div className="cards">
+        {Array.from({ length: 5 }).map((_, i) => (
+          <div className="stat stat-skel" key={i}>
+            <div className="skel skel-value" />
+            <div className="skel skel-label" />
+          </div>
+        ))}
+      </div>
+      <div className="panels">
+        <section className="panel">
+          <h3>Tool calls by type</h3>
+          <div className="bars">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div className="bar-row" key={i}>
+                <div className="skel skel-line" style={{ width: "48px" }} />
+                <div className="skel skel-bar" />
+                <div className="skel skel-line" style={{ width: "20px" }} />
+              </div>
+            ))}
+          </div>
+        </section>
+        <section className="panel">
+          <h3>Files touched</h3>
+          <div className="files">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div className="skel skel-line" key={i} style={{ width: `${70 - i * 8}%` }} />
+            ))}
+          </div>
+        </section>
+      </div>
+      <section className="panel">
+        <h3>Risk log</h3>
+        <div className="risk">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div className="skel skel-line" key={i} style={{ width: `${85 - i * 12}%` }} />
+          ))}
+        </div>
+      </section>
+    </div>
   );
 }
 

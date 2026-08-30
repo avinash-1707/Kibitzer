@@ -1,10 +1,20 @@
 // Persona control (mobile-app.md §Feed / §Session controls). PUT <base>/persona
 // affects FUTURE narration only. The server broadcasts a `persona` frame which the
 // store applies as the source of truth; local `pending` is just an optimistic echo.
-import { useState } from "react";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+// A sliding pill highlights the active persona (mirrors the web's layoutId pill).
+import { useEffect, useState } from "react";
+import { StyleSheet, Text, View } from "react-native";
 import type { PersonaKey } from "@kibitzer/shared";
+import Animated, {
+  useAnimatedStyle,
+  useReducedMotion,
+  useSharedValue,
+  withSpring,
+  withTiming,
+} from "react-native-reanimated";
 import { setPersona as putPersona } from "../../api";
+import { ScalePressable } from "../ScalePressable";
+import { colors, radius, spacing } from "../../theme";
 
 const PERSONAS: PersonaKey[] = ["sports", "nature"];
 
@@ -17,23 +27,53 @@ export function PersonaSwitcher({
 }) {
   const [pending, setPending] = useState<PersonaKey | null>(null);
   const current = pending ?? active;
+  const reduceMotion = useReducedMotion();
+
+  const [layouts, setLayouts] = useState<Partial<Record<PersonaKey, { x: number; width: number }>>>({});
+  const pillX = useSharedValue(0);
+  const pillWidth = useSharedValue(0);
+  const pillOpacity = useSharedValue(0);
+
+  const activeLayout = current ? layouts[current] : undefined;
+  useEffect(() => {
+    if (!activeLayout) return;
+    const move = reduceMotion
+      ? (v: number) => withTiming(v, { duration: 0 })
+      : (v: number) => withSpring(v, { stiffness: 260, damping: 26, mass: 0.7 });
+    pillX.value = move(activeLayout.x);
+    pillWidth.value = move(activeLayout.width);
+    pillOpacity.value = withTiming(1, { duration: 120 });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeLayout?.x, activeLayout?.width, reduceMotion]);
+
+  const pillStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: pillX.value }],
+    width: pillWidth.value,
+    opacity: pillOpacity.value,
+  }));
 
   return (
     <View style={styles.row} accessibilityRole="radiogroup">
+      <Animated.View style={[styles.pill, pillStyle]} />
       {PERSONAS.map((p) => {
         const isActive = current === p;
         return (
-          <TouchableOpacity
+          <ScalePressable
             key={p}
-            style={[styles.btn, isActive && styles.btnActive]}
+            style={styles.btn}
             disabled={pending !== null}
             onPress={() => {
               setPending(p);
               putPersona(base, p).finally(() => setPending(null));
             }}
+            accessibilityRole="button"
+            onLayout={(e) => {
+              const { x, width } = e.nativeEvent.layout;
+              setLayouts((prev) => ({ ...prev, [p]: { x, width } }));
+            }}
           >
             <Text style={[styles.text, isActive && styles.textActive]}>{p}</Text>
-          </TouchableOpacity>
+          </ScalePressable>
         );
       })}
     </View>
@@ -41,16 +81,30 @@ export function PersonaSwitcher({
 }
 
 const styles = StyleSheet.create({
-  row: { flexDirection: "row", gap: 8 },
-  btn: {
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    borderRadius: 999,
+  row: {
+    flexDirection: "row",
+    gap: spacing.sm,
+    backgroundColor: colors.panel2,
     borderWidth: 1,
-    borderColor: "#444",
-    backgroundColor: "#1a1a1a",
+    borderColor: colors.border,
+    borderRadius: radius.md,
+    padding: 3,
   },
-  btnActive: { backgroundColor: "#fff", borderColor: "#fff" },
-  text: { color: "#bbb", fontSize: 13, fontWeight: "600", textTransform: "capitalize" },
-  textActive: { color: "#111" },
+  pill: {
+    position: "absolute",
+    top: 3,
+    bottom: 3,
+    left: 0,
+    backgroundColor: colors.panel3,
+    borderWidth: 1,
+    borderColor: colors.accentBorder,
+    borderRadius: radius.md - 3,
+  },
+  btn: {
+    paddingHorizontal: spacing.md + 2,
+    paddingVertical: spacing.xs + 2,
+    borderRadius: radius.md - 3,
+  },
+  text: { color: colors.muted, fontSize: 13, fontWeight: "600", textTransform: "capitalize" },
+  textActive: { color: colors.text },
 });

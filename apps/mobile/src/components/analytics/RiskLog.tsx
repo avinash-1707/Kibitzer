@@ -2,7 +2,9 @@
 // cross-reference. Each row: drama-color dot, the logLine, its score, and the time.
 import { StyleSheet, Text, View } from "react-native";
 import type { Analytics } from "@kibitzer/shared";
+import Animated, { FadeIn } from "react-native-reanimated";
 import { dramaColor } from "../feed/drama";
+import { colors, fonts, spacing } from "../../theme";
 
 type RiskEntry = Analytics["riskLog"][number];
 
@@ -12,17 +14,23 @@ export function RiskLog({ entries }: { entries: RiskEntry[] }) {
   }
   return (
     <View style={styles.list}>
-      {entries.map((r) => {
+      {entries.map((r, i) => {
         const color = dramaColor(r.dramaScore);
         return (
-          <View key={r.eventId} style={styles.row}>
+          <Animated.View
+            key={r.eventId}
+            entering={FadeIn.duration(220).delay(i * 30)}
+            style={styles.row}
+          >
             <View style={[styles.dot, { backgroundColor: color }]} />
-            <Text style={styles.line}>{r.logLine}</Text>
+            <Text style={styles.line} numberOfLines={2}>
+              {r.logLine}
+            </Text>
             <Text style={[styles.score, { color }]}>{r.dramaScore}</Text>
             <Text style={styles.time}>
               {new Date(r.timestamp).toLocaleTimeString()}
             </Text>
-          </View>
+          </Animated.View>
         );
       })}
     </View>
@@ -30,11 +38,11 @@ export function RiskLog({ entries }: { entries: RiskEntry[] }) {
 }
 
 const styles = StyleSheet.create({
-  list: { gap: 10 },
-  row: { flexDirection: "row", alignItems: "center", gap: 8 },
-  dot: { width: 10, height: 10, borderRadius: 5 },
-  line: { flex: 1, fontSize: 13, color: "#333" },
-  score: { fontSize: 13, fontWeight: "800" },
-  time: { fontSize: 11, color: "#aaa", width: 68, textAlign: "right" },
-  empty: { color: "#999", fontSize: 14, fontStyle: "italic" },
+  list: { gap: spacing.sm + 2 },
+  row: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
+  dot: { width: 8, height: 8, borderRadius: 4, flexShrink: 0 },
+  line: { flex: 1, fontSize: 12.5, color: colors.textDim, fontFamily: fonts.mono },
+  score: { fontSize: 13, fontWeight: "800", fontVariant: ["tabular-nums"] },
+  time: { fontSize: 11, color: colors.muted, width: 68, textAlign: "right" },
+  empty: { color: colors.muted, fontSize: 14, fontStyle: "italic" },
 });

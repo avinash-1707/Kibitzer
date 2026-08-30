@@ -1,5 +1,6 @@
 // Native summary card (mobile-app.md §Analytics): a big value over a label.
 import { StyleSheet, Text, View } from "react-native";
+import { colors, fonts, radius, spacing } from "../../theme";
 
 export function StatCard({ label, value }: { label: string; value: string | number }) {
   return (
@@ -15,15 +16,26 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     flexBasis: "30%",
     minWidth: 100,
-    backgroundColor: "#fff",
-    borderRadius: 12,
-    paddingVertical: 14,
-    paddingHorizontal: 12,
+    backgroundColor: colors.panel,
+    borderRadius: radius.md,
+    paddingVertical: spacing.md + 2,
+    paddingHorizontal: spacing.md,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: "#e2e2e2",
+    borderColor: colors.border,
     alignItems: "flex-start",
-    gap: 4,
+    gap: spacing.xs,
   },
-  value: { fontSize: 22, fontWeight: "800", color: "#111" },
-  label: { fontSize: 12, color: "#777", textTransform: "uppercase", letterSpacing: 0.4 },
+  value: {
+    fontFamily: fonts.displaySemibold,
+    fontSize: 20,
+    color: colors.text,
+    fontVariant: ["tabular-nums"],
+  },
+  label: {
+    fontSize: 11,
+    color: colors.muted,
+    fontWeight: "600",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+  },
 });

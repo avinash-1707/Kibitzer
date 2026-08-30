@@ -1,4 +1,12 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import {
+  AnimatePresence,
+  motion,
+  useMotionValue,
+  useReducedMotion,
+  useSpring,
+  useTransform,
+} from "motion/react";
 import type { FeedItem, PersonaKey } from "@kibitzer/shared";
 import type { StreamState } from "./useEventStream.ts";
 import { setPersona } from "./api.ts";
@@ -19,14 +27,22 @@ export function Commentary({ stream }: { stream: StreamState }) {
       </div>
 
       {stream.feed.length === 0 ? (
-        <p className="empty">
-          Waiting for the agent… narrated lines appear here as it works.
-        </p>
+        <div className="empty-state">
+          <span className="standby-ring" aria-hidden="true">
+            <span className="standby-dot" />
+          </span>
+          <p className="empty-title">Waiting for the agent…</p>
+          <p className="empty-sub">
+            Narrated lines appear here the moment it starts working.
+          </p>
+        </div>
       ) : (
         <ul className="feed">
-          {stream.feed.map((item) => (
-            <FeedCard key={item.event.id} item={item} />
-          ))}
+          <AnimatePresence initial={false}>
+            {stream.feed.map((item) => (
+              <FeedCard key={item.event.id} item={item} />
+            ))}
+          </AnimatePresence>
         </ul>
       )}
     </div>
@@ -34,17 +50,43 @@ export function Commentary({ stream }: { stream: StreamState }) {
 }
 
 function DramaMeter({ score }: { score: number }) {
-  const pct = Math.max(0, Math.min(100, score));
+  // Guard a non-finite score: NaN would permanently poison the spring and
+  // render the literal text "NaN".
+  const pct = Number.isFinite(score) ? Math.max(0, Math.min(100, score)) : 0;
+  const color = dramaColor(pct);
+  const hot = pct >= 70;
+  const reduceMotion = useReducedMotion();
+
+  // Spring-driven value powers both the fill width and the rolling number —
+  // one physical motion instead of two things separately snapping to place.
+  const progress = useMotionValue(pct);
+  const spring = useSpring(progress, { stiffness: 140, damping: 24, mass: 0.6 });
+  const rounded = useTransform(spring, (v) => Math.round(v));
+  // scaleX (transform) instead of width — avoids layout reflow on every tick.
+  const scaleX = useTransform(spring, (v) => v / 100);
+
+  useEffect(() => {
+    progress.set(pct);
+  }, [pct, progress]);
+
   return (
     <div className="meter">
       <div className="meter-head">
         <span>Drama</span>
-        <strong style={{ color: dramaColor(pct) }}>{Math.round(pct)}</strong>
+        <motion.strong className="meter-value" style={{ color }}>
+          {reduceMotion ? Math.round(pct) : rounded}
+        </motion.strong>
       </div>
-      <div className="meter-track">
-        <div
-          className="meter-fill"
-          style={{ width: `${pct}%`, background: dramaColor(pct) }}
+      <div className={hot ? "meter-track hot" : "meter-track"}>
+        <motion.div
+          // background transitions via the plain CSS rule below (.meter-fill);
+          // only the transform is spring-driven through the shared MotionValue.
+          className={hot ? "meter-fill hot" : "meter-fill"}
+          style={{
+            transformOrigin: "left",
+            scaleX: reduceMotion ? pct / 100 : scaleX,
+            background: color,
+          }}
         />
       </div>
     </div>
@@ -69,7 +111,14 @@ function PersonaSwitcher({ active }: { active: PersonaKey | null }) {
             setPersona(p).finally(() => setPending(null));
           }}
         >
-          {p}
+          {current === p && (
+            <motion.span
+              layoutId="persona-pill"
+              className="persona-pill"
+              transition={{ type: "spring", duration: 0.35, bounce: 0.15 }}
+            />
+          )}
+          <span className="persona-label">{p}</span>
         </button>
       ))}
     </div>
@@ -83,7 +132,14 @@ function FeedCard({ item }: { item: FeedItem }) {
   const detail = describeDetail(item);
 
   return (
-    <li className="card">
+    <motion.li
+      layout="position"
+      initial={{ opacity: 0, y: 10, filter: "blur(4px)" }}
+      animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+      exit={{ opacity: 0, y: -6, filter: "blur(4px)" }}
+      transition={{ type: "spring", duration: 0.4, bounce: 0 }}
+      className="card"
+    >
       <span className="card-strip" style={{ background: color }} />
       <div className="card-body">
         <div className="card-meta">
@@ -95,14 +151,16 @@ function FeedCard({ item }: { item: FeedItem }) {
           </span>
         </div>
         <p className="card-narration">
-          {item.narration ?? <span className="pending">narrating…</span>}
+          {item.narration ?? (
+            <span className="pending pending-shimmer">narrating…</span>
+          )}
         </p>
         {detail && <p className="card-detail">{detail}</p>}
         {item.audioUrl && (
           <audio className="card-audio" controls src={item.audioUrl} />
         )}
       </div>
-    </li>
+    </motion.li>
   );
 }
 
