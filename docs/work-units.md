@@ -86,8 +86,12 @@ units are unblocked and mutually independent.
   `templatedFallback`) — all fully specified in `event-schema.md` + `persona-prompts.md`.
   Ship their unit tests (`bun test`).
 - **Real** state layer `packages/server/src/store.ts` (`saveEvent`, `updateEvent`,
-  `pushFeedItem`, `getRing`, `activeSessionId`, `recentBefore` + the SQLite DDL) and `bus.ts`
-  (`addClient`, `removeClient`, `broadcast`) — signatures from `architecture.md` §3, §5.
+  `pushFeedItem`, `getRing`, `activeSessionId`, `recentBefore`, `getPersona`/`setPersona`,
+  `rawDb` + the SQLite DDL) and `bus.ts` (`addClient`, `removeClient`, `broadcast`) —
+  signatures from `architecture.md` §3, §5. **`getPersona`/`setPersona` are the frozen
+  global persona state** so Unit A (reads it for narration) and Unit B (`PUT /persona`) never
+  reinvent it. `updateEvent` accepts an optional `detail` so the pipeline can re-persist
+  `isDestructive` after step 0.
 - **Skeleton** `packages/server/src/index.ts`: `Bun.serve` + Hono, mounting **every** route
   module (`events`, `stream`, `analytics`, `tts`, `devpost`, `persona`) up front. Each route
   file exists as a stub exporting a Hono router that returns `501 Not Implemented`.
