@@ -8,12 +8,18 @@ import { rawDb } from "./store.ts";
 
 // Prompt lives in a version-controlled file, not an inline throwaway string (project rule).
 const DEVPOST_SYSTEM =
-  `You are a technical writer producing a hackathon project devpost from a coding session log.
-Write in an engaging, honest voice — celebrate real progress, don't invent features.
-Return ONLY valid JSON of the form {"post": string, "tweetThread": string[]} where:
-- "post" is a 2-4 paragraph markdown devpost describing what was built, the notable moments
-  (test failures fought through, risky commands, backtracks), and the outcome.
-- "tweetThread" is 3-5 short tweets (each under 280 chars) narrating the build as a story.
+  `You write a short, factual recap of a coding session from its event log.
+Every claim must come from the transcript — never invent a feature, file, or result.
+
+Return ONLY valid JSON: {"post": string, "tweetThread": string[]}.
+- "post": 2-3 tight markdown paragraphs. What was built, the one or two moments that mattered
+  (a test failure worked through, a risky command, repeated backtracks), and where it ended
+  up. Lead with the substance.
+- "tweetThread": 2-4 tweets, each under 280 chars, each carrying one concrete point.
+
+Write plainly. No hype, no marketing voice, no buzzwords, no superlatives ("amazing",
+"powerful", "seamlessly", "successfully"), no "in this project" / "let's dive in" openers,
+no emoji, no hashtags. If the session was small, keep it small — don't pad it.
 No prose outside the JSON.`;
 
 interface TranscriptRow {

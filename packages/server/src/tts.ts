@@ -1,7 +1,12 @@
 // Owned by Unit A. Signatures FROZEN by Unit 0.
-// ElevenLabs Flash v2.5 → mp3 at packages/server/public/audio/<eventId>.mp3, cache-first.
+// ElevenLabs → mp3 at packages/server/public/audio/<eventId>.mp3, cache-first.
 import { existsSync, mkdirSync, renameSync, rmSync } from "node:fs";
 import { join } from "node:path";
+
+// Voice model. Default to the higher-quality conversational flagship (richer, more natural
+// than flash v2.5, still ~280ms — fine for live narration). Override via ELEVENLABS_MODEL_ID;
+// fall back to eleven_multilingual_v2 if your voice/plan rejects the v3 model.
+const MODEL_ID = process.env.ELEVENLABS_MODEL_ID ?? "eleven_v3_conversational";
 
 // import.meta.dir === packages/server/src, so audio lives one level up in public/audio.
 const AUDIO_DIR = join(import.meta.dir, "..", "public", "audio");
@@ -56,7 +61,7 @@ async function generate(eventId: string, text: string): Promise<string> {
         "xi-api-key": process.env.ELEVENLABS_API_KEY ?? "",
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ text, model_id: "eleven_flash_v2_5" }),
+      body: JSON.stringify({ text, model_id: MODEL_ID }),
     },
   );
   if (!res.ok) {
