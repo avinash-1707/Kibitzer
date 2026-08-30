@@ -35,51 +35,38 @@ See `docs/project-overview.md` for the pitch, `docs/architecture.md` for the sys
 
 ```sh
 bun install            # installs zod, hono, and workspace deps
-cp .env.example .env   # then fill in the two API keys
+cp .env.example .env   # then fill in the API keys (see .env.example for what each does)
 ngrok config add-authtoken <token>   # once
 ```
 
-`.env`:
-```
-KIBITZER_PORT=8787
-KIBITZER_DB=kibitzer.sqlite
-KIBITZER_ENDPOINT=http://localhost:8787/events
-OPENROUTER_API_KEY=sk-or-...
-OPENROUTER_NARRATION_MODEL=meta-llama/llama-3.1-8b-instruct
-OPENROUTER_DEVPOST_MODEL=google/gemini-2.5-flash
-ELEVENLABS_API_KEY=...
-ELEVENLABS_VOICE_ID=JBFqnCBsd6RMkjVDRZzb
-```
+The two OpenRouter model vars and both API keys are **required** for full narration + audio;
+without keys the pipeline degrades gracefully (templated text / text-only). See `.env.example`
+for every variable and its default.
 
 ## Run
 
+Three terminals (each root script reads `.env`):
+
 ```sh
-bun run packages/server/src/index.ts   # backend on :8787
-ngrok http 8787                         # prints the public tunnel URL (the app's base)
-bun test                               # drama/classify unit tests
+bun run server     # 1) backend on :8787 (alias of `bun run dev`)
+bun run tunnel     # 2) ngrok http $KIBITZER_PORT — prints the public tunnel URL
+bun run pair       # 3) auto-detects the ngrok tunnel and prints a scannable pairing QR
 ```
 
-Then launch the installed app, scan the pairing QR (encodes the ngrok URL), and the Feed
-connects over the tunnel. App details: `docs/mobile-app.md`.
+`bun run pair` also accepts an explicit URL (`bun run pair https://x.ngrok-free.app`) if you'd
+rather not auto-detect. Then launch the installed app, scan the QR, and the Feed connects over
+the tunnel. App details: `docs/mobile-app.md`.
+
+```sh
+bun test           # drama/classify + route unit tests
+```
 
 ### Secondary: web dashboard (optional, big-screen view)
 ```sh
-bun run --cwd apps/dashboard dev        # Vite on :5173, talks to localhost:8787
+bun run dashboard   # Vite on :5173, proxies /events,/session,/persona,/api → :8787
 ```
-The dashboard (:5173) and server (:8787) are different ports, so relative URLs need a dev
-proxy in `apps/dashboard/vite.config.ts`:
-```ts
-export default defineConfig({
-  server: {
-    proxy: {
-      "/events":  "http://localhost:8787",
-      "/session": "http://localhost:8787",
-      "/persona": "http://localhost:8787",
-      "/api":     "http://localhost:8787",
-    },
-  },
-});
-```
+The dev proxy is already wired in `apps/dashboard/vite.config.ts` (the dashboard and server
+are different origins), so no extra config is needed.
 
 ## Wire up an adapter (pick your CLI)
 

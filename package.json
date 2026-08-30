@@ -8,6 +8,10 @@
   ],
   "scripts": {
     "dev": "bun run packages/server/src/index.ts",
+    "server": "bun run packages/server/src/index.ts",
+    "tunnel": "ngrok http ${KIBITZER_PORT:-8787}",
+    "pair": "bun run scripts/pair-qr.ts",
+    "dashboard": "bun run --cwd apps/dashboard dev",
     "test": "bun test packages",
     "typecheck": "tsc --noEmit"
   },
