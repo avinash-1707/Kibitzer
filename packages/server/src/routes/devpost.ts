@@ -5,6 +5,7 @@ import { Hono } from "hono";
 import type { Devpost } from "@kibitzer/shared";
 import { rawDb } from "../store.ts";
 import { generateDevpost, NoEventsError } from "../devpost.ts";
+import { log } from "../log.ts";
 
 export const devpostRoutes = new Hono();
 
@@ -34,7 +35,7 @@ devpostRoutes.post("/session/:id/end", async (c) => {
     // No events → the session doesn't exist for our purposes (404). Any other failure is an
     // upstream/LLM problem (502) — don't leak provider internals into the response body.
     if (err instanceof NoEventsError) return c.json({ error: err.message }, 404);
-    console.error(`devpost generation failed for ${sessionId}:`, err);
+    log.error(`devpost generation failed for ${sessionId}:`, err);
     return c.json({ error: "devpost generation failed" }, 502);
   }
 

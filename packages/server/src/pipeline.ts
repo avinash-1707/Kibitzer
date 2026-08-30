@@ -16,6 +16,7 @@ import {
   updateEvent,
 } from "./store.ts";
 import { synthesize } from "./tts.ts";
+import { log } from "./log.ts";
 
 /**
  * Process one event: classify → score → debounce → narrate → tts,
@@ -66,6 +67,6 @@ export async function runPipeline(event: KibitzerEvent): Promise<void> {
     updateEvent(event.id, { audioUrl });
     broadcast("audio", { eventId: event.id, audioUrl });
   } catch (err) {
-    console.warn(`pipeline: tts failed for ${event.id}:`, err);
+    log.warn(`pipeline: tts failed for ${event.id}:`, err);
   }
 }

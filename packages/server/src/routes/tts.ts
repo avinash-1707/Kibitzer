@@ -2,6 +2,7 @@
 import { Hono } from "hono";
 import { getRing } from "../store.ts";
 import { audioPath, isSafeEventId, synthesize } from "../tts.ts";
+import { log } from "../log.ts";
 
 export const ttsRoutes = new Hono();
 
@@ -22,7 +23,7 @@ ttsRoutes.get("/api/tts", async (c) => {
     try {
       path = await synthesize(eventId, narration);
     } catch (err) {
-      console.warn(`tts: generation failed for ${eventId}:`, err);
+      log.warn(`tts: generation failed for ${eventId}:`, err);
       return c.json({ error: "tts generation failed" }, 502);
     }
   }

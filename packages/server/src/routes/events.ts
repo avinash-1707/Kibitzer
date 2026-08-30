@@ -4,6 +4,7 @@ import { eventSchema, type KibitzerEvent } from "@kibitzer/shared";
 import { saveEvent } from "../store.ts";
 import { runPipeline } from "../pipeline.ts";
 import { normalizeClaudeCode } from "../normalize/claude-code.ts";
+import { log } from "../log.ts";
 
 export const eventsRoutes = new Hono();
 
@@ -13,7 +14,7 @@ export const eventsRoutes = new Hono();
 function ingest(event: KibitzerEvent): void {
   saveEvent(event);
   Promise.resolve(runPipeline(event)).catch((err) =>
-    console.error(`pipeline: runPipeline failed for ${event.id}:`, err),
+    log.error(`pipeline: runPipeline failed for ${event.id}:`, err),
   );
 }
 
@@ -52,7 +53,7 @@ eventsRoutes.post("/ingest/claude-code", async (c) => {
     const event = normalizeClaudeCode(raw) ?? bestEffortEvent(raw);
     if (event) ingest(event);
   } catch (err) {
-    console.error("ingest/claude-code: dropped payload:", err);
+    log.error("ingest/claude-code: dropped payload:", err);
   }
   return c.json({ ok: true }, 200);
 });
