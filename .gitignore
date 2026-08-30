@@ -1,0 +1,10 @@
+node_modules/
+*.sqlite
+*.sqlite-*
+.env
+.env.local
+packages/server/public/audio/
+dist/
+.expo/
+*.log
+.DS_Store
