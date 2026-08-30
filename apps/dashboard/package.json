@@ -1,0 +1,10 @@
+{
+  "name": "@kibitzer/dashboard",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "//": "Unit 0 placeholder. Unit I scaffolds the real Vite + React + Tailwind app here (own vite.config.ts with the dev proxy — see README). Secondary interface; build after the app works.",
+  "scripts": {
+    "dev": "echo 'dashboard not scaffolded yet — Unit I'"
+  }
+}

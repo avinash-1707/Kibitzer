@@ -1,0 +1,19 @@
+{
+  "//": "Self-contained TS config for the app. Excluded from the root typecheck; Units F/G/H run `expo` which supplies types. extends expo/tsconfig.base once deps are installed.",
+  "compilerOptions": {
+    "strict": true,
+    "jsx": "react-jsx",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "target": "ESNext",
+    "lib": ["ESNext", "DOM"],
+    "skipLibCheck": true,
+    "noEmit": true,
+    "allowImportingTsExtensions": true,
+    "verbatimModuleSyntax": true,
+    "paths": {
+      "@kibitzer/shared": ["../../packages/shared/src/index.ts"]
+    }
+  },
+  "include": ["app", "src"]
+}

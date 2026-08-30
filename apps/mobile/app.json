@@ -1,0 +1,14 @@
+{
+  "expo": {
+    "name": "Kibitzer",
+    "slug": "kibitzer",
+    "scheme": "kibitzer",
+    "version": "0.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "plugins": ["expo-router"],
+    "ios": { "supportsTablet": true },
+    "android": {}
+  }
+}
