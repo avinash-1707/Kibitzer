@@ -6,15 +6,26 @@
     "module": "ESNext",
     "moduleResolution": "bundler",
     "target": "ESNext",
-    "lib": ["ESNext", "DOM"],
+    "lib": [
+      "ESNext",
+      "DOM"
+    ],
     "skipLibCheck": true,
     "noEmit": true,
     "allowImportingTsExtensions": true,
     "verbatimModuleSyntax": true,
     "paths": {
-      "@kibitzer/shared": ["../../packages/shared/src/index.ts"]
+      "@kibitzer/shared": [
+        "../../packages/shared/src/index.ts"
+      ]
     }
   },
-  "include": ["app", "src"],
-  "exclude": ["**/*.test.ts"]
+  "include": [
+    "app",
+    "src"
+  ],
+  "exclude": [
+    "**/*.test.ts"
+  ],
+  "extends": "expo/tsconfig.base"
 }

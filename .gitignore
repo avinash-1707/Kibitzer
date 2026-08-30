@@ -8,3 +8,9 @@ dist/
 .expo/
 *.log
 .DS_Store
+
+# Expo prebuild output — regenerable from app.json via `expo prebuild`; not source.
+apps/mobile/android/
+apps/mobile/ios/
+apps/mobile/local.properties
+apps/mobile/android/local.properties
