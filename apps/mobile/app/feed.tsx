@@ -59,6 +59,8 @@ function FeedConnected({ base }: { base: string }) {
 
   const status = useEventStream(base, {
     onHello: (d) => setSession(d.sessionId),
+    // replay rebuilds history on connect — store only, never enqueue (would blast the
+    // whole session's audio at once on every reconnect). Only `onAudio` enqueues.
     onReplay: (d) => upsertItem(d),
     onScore: (d) => setScore(d.eventId, d.dramaScore),
     onNarration: (d) => upsertItem(d),
