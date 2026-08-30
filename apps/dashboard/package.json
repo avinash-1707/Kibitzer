@@ -3,8 +3,20 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
-  "//": "Unit 0 placeholder. Unit I scaffolds the real Vite + React + Tailwind app here (own vite.config.ts with the dev proxy — see README). Secondary interface; build after the app works.",
   "scripts": {
-    "dev": "echo 'dashboard not scaffolded yet — Unit I'"
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@kibitzer/shared": "workspace:*",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1"
+  },
+  "devDependencies": {
+    "@types/react": "^19.1.13",
+    "@types/react-dom": "^19.1.9",
+    "@vitejs/plugin-react": "^5.0.4",
+    "vite": "^7.1.7"
   }
 }
