@@ -17,5 +17,5 @@
       "@kibitzer/shared/*": ["./packages/shared/src/*"]
     }
   },
-  "exclude": ["node_modules", "apps/mobile", "apps/dashboard"]
+  "exclude": ["node_modules", "apps/mobile", "apps/dashboard", "adapters"]
 }
