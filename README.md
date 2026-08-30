@@ -19,6 +19,7 @@ See `docs/project-overview.md` for the pitch, `docs/architecture.md` for the sys
 | `persona-prompts.md` | Persona system prompts, narration LLM call, drama-meter pure fn |
 | `ux-flow.md` | App screens (primary) + dashboard (secondary), tied to endpoints |
 | `build-plan.md` | 3-hour, app-primary build plan with acceptance checks |
+| `work-units.md` | Independent work units (disjoint files + frozen contracts) for parallel sessions |
 
 ## Prerequisites
 - [Bun](https://bun.sh) (runtime; ships `bun:sqlite` + `fetch`)
